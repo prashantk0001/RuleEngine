@@ -159,32 +159,25 @@ const ruleSchema = {
     "definitions": {
         "criteria": {
             "type": ["object", "array"],
-
-            "if": { "type": "object" },
-            "then": {
-                "properties" : {
-                    "value" : {
-                        "type": ["number", "integer", "string", "boolean", "null"]
-                    },
-                    "compareWith" : {
-                        "type": ["number", "integer", "string", "boolean", "null"]
-                    },
-                    "param" : {
-                        "type": "string"
-                    },
-                },
-                "required" : ["param"]
-             },
-            "else": {
-                "type": "array"
-            },
-
             "properties" : {
-                "operator" : {
-                    "type" : "string"
+                "value" : {
+                    "type": ["number", "integer", "string", "boolean", "null"]
                 },
-                
-                "criteria" : { "$ref": "#/definitions/criteria" }
+                "compareWith" : {
+                    "type": "string"
+                },
+                "param" : {
+                    "type": "string"
+                },
+                "operator" : {
+                    "type" : "string",
+                    "enum": ["&&","||","!=","==",">" ,">=","<" ,"<="]
+                },
+                "criteria" : {
+                    //"type" : ["array","object"],
+                     "$ref": "#/definitions/criteria" ,
+
+                },
             },
             "required" : ["operator"],
             "additionalProperties" : false
@@ -233,6 +226,7 @@ const ruleValidator = ajv.compile(ruleSchema);
 //engine code, exports etc
 const ruleRegistry = [];
 
+//public
 const registerRule = (rule) => {
     let immutableRule = produce(rule, (draft) => {return draft});
     let valid = ruleValidator(immutableRule);
@@ -252,6 +246,7 @@ const fetchRuleFromRegistry = (rules, ruleName) => {
 const reducerForAND = (accumulator, currentValue) => accumulator && currentValue;
 const reducerForOR = (accumulator, currentValue) => accumulator || currentValue;
 
+
 const operatorMap = produce({
     "&&"    :   "and",
     "||"    :   "or",
@@ -263,9 +258,11 @@ const operatorMap = produce({
     "<="    :   "less-than-equal-to"
 }, (draft) => {return draft});
 
+//public
 const validOperations = Object.keys(operatorMap);
 
 const criteriaValidator = ajv.compile(criteriaSchema);
+
 const processCriteria = (criteria, inputs) => {
 
     let isValid = criteriaValidator(criteria);
@@ -354,6 +351,7 @@ registerRule(rules[1]);
 
 let immutableProcessMe = produce(processMe, (draft) => {return draft});
 
+//add below statements into a single method to make public
 let fetchedRule = fetchRuleFromRegistry(ruleRegistry, immutableProcessMe.ruleToExecute);
 let result =  engine(fetchedRule, immutableProcessMe);
 
