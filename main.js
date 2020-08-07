@@ -22,6 +22,7 @@
     @todo :  look how to process if objects are sent as params , JSPath?
     @todo :  Add all operators as const export prop - prepared, yet to export
     @todo :  remove immer when dev is complete
+    @todo :  input should be able to specify if multiple rules need to be executed for that input
 
     ----------------------------------------------------------------------------------------------
     
@@ -43,15 +44,9 @@ let processMe = {
 
 /*--------------------------------------------------------------------------------------------------------------------------------*/
 
-/*dependencies*/
-
-let immer = require("immer");
-let { produce } = immer;
-
 //rule definition
 let rules = [
     {
-        bindCallback : "method",
         ruleName : "myrule",
         returnVal : true,
         formula : {
@@ -81,7 +76,6 @@ let rules = [
         }
     },
     {
-        bindCallback : "method",
         ruleName : "myrule2",
         returnVal : true,
         formula : {
@@ -128,6 +122,22 @@ let rules = [
 ];
 
 /*--------------------------------------------------------------------------------------------------------------------------------*/
+
+/*dependencies*/
+
+let immer = require("immer");
+let { produce } = immer;
+
+let Ajv = require("ajv");
+
+
+const ruleSchema = {}
+
+
+
+
+const ajv = new Ajv(); // options can be passed, e.g. {allErrors: true}
+const ruleValidator = ajv.compile(ruleSchema);
 
 //engine code, exports etc
 const ruleRegistry = [];
