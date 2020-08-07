@@ -16,9 +16,9 @@
     ----------------------------------------------------------------------------------------------
 
     @todo :  Create Readme and dependencies, add more commments
-    @todo :  add schema validation for rules, check for yup.js / ajv
+    @todo :  add schema validation for rules, check for yup.js / ajv        - added ajv, need to revalidate schema
     @todo :  List use cases for projects
-    @todo :  listed operators for inital phase : AND, OR, equals, not-equals
+    @todo :  listed operators for inital phase : "&&","||","!=","==",">" ,">=","<" ,"<="
     @todo :  look how to process if objects are sent as params , JSPath?
     @todo :  Add all operators as const export prop - prepared, yet to export
     @todo :  remove immer when dev is complete
@@ -131,20 +131,114 @@ let { produce } = immer;
 let Ajv = require("ajv");
 
 
-const ruleSchema = {}
+const criteriaSchema = {
+    "type": ["object", "array"],
+    "properties" : {
+        "value" : {
+            "type": ["number", "integer", "string", "boolean", "null"]
+        },
+        "compareWith" : {
+            "type": "string"
+        },
+        "param" : {
+            "type": "string"
+        },
+        "operator" : {
+            "type" : "string",
+            "enum": ["&&","||","!=","==",">" ,">=","<" ,"<="]
+        },
+        "criteria" : {
+            "type" : ["array","object"]
+        },
+    },
+    "required" : ["operator"],
+    "additionalProperties" : false
+}
+
+const ruleSchema = {
+    "definitions": {
+        "criteria": {
+            "type": ["object", "array"],
+
+            "if": { "type": "object" },
+            "then": {
+                "properties" : {
+                    "value" : {
+                        "type": ["number", "integer", "string", "boolean", "null"]
+                    },
+                    "compareWith" : {
+                        "type": ["number", "integer", "string", "boolean", "null"]
+                    },
+                    "param" : {
+                        "type": "string"
+                    },
+                },
+                "required" : ["param"]
+             },
+            "else": {
+                "type": "array"
+            },
+
+            "properties" : {
+                "operator" : {
+                    "type" : "string"
+                },
+                
+                "criteria" : { "$ref": "#/definitions/criteria" }
+            },
+            "required" : ["operator"],
+            "additionalProperties" : false
+        }
+    },
+    "type": "object",
+    "properties": {
+        "ruleName": { 
+            "type": "string" 
+        },
+        "formula": {
+            "type": "object",
+            "properties" : {
+                "operator" : {
+                    "type" : "string"
+                },
+                "value" : {
+                    "type": ["number", "integer", "string", "boolean", "null"]
+                },
+                "compareWith" : {
+                    "type": ["number", "integer", "string", "boolean", "null"]
+                },
+                "param" : {
+                    "type": "string"
+                },
+                "criteria" : { "$ref": "#/definitions/criteria" },
+            },
+            "required" : ["operator"],
+            "additionalProperties" : false
+        },
+        "returnVal": {
+            "type": ["number", "integer", "string", "boolean", "array", "object" , "null"],
+            "additionalProperties" : true
+        }
+    },
+    "required" : ["ruleName", "formula"],
+    "additionalProperties" : false
+}
 
 
+const ajv = new Ajv({ allErrors: true}); // options can be passed, e.g. {allErrors: true}
 
-
-const ajv = new Ajv(); // options can be passed, e.g. {allErrors: true}
 const ruleValidator = ajv.compile(ruleSchema);
+
 
 //engine code, exports etc
 const ruleRegistry = [];
 
 const registerRule = (rule) => {
     let immutableRule = produce(rule, (draft) => {return draft});
-    ruleRegistry.push(immutableRule);
+    let valid = ruleValidator(immutableRule);
+    if(valid){
+        ruleRegistry.push(immutableRule);
+    }
 }
 
 const fetchRuleFromRegistry = (rules, ruleName) => {
@@ -158,7 +252,7 @@ const fetchRuleFromRegistry = (rules, ruleName) => {
 const reducerForAND = (accumulator, currentValue) => accumulator && currentValue;
 const reducerForOR = (accumulator, currentValue) => accumulator || currentValue;
 
-const operatorMap = {
+const operatorMap = produce({
     "&&"    :   "and",
     "||"    :   "or",
     "!="    :   "not-equals",
@@ -167,11 +261,17 @@ const operatorMap = {
     ">="    :   "greater-than-equal-to",
     "<"     :   "less-than",
     "<="    :   "less-than-equal-to"
-}
+}, (draft) => {return draft});
 
 const validOperations = Object.keys(operatorMap);
 
+const criteriaValidator = ajv.compile(criteriaSchema);
 const processCriteria = (criteria, inputs) => {
+
+    let isValid = criteriaValidator(criteria);
+    criteria
+    isValid
+
     let operator = operatorMap[criteria.operator];
     switch(operator) {
         case "and": {
