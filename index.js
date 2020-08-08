@@ -132,11 +132,12 @@ let rules = [
 /*dependencies*/
 
 let immer = require("immer");
+let Ajv = require("ajv");
+
 let { produce } = immer;
 
 const immutate = (rule) => produce(rule, (draft) => {return draft});
 
-let Ajv = require("ajv");
 
 
 const criteriaSchema = {
@@ -394,7 +395,6 @@ module.exports = {
     registerRule,
     validOperations
 }
-
 
 /* usage */
 registerRule("mynamespace", rules[0]);
