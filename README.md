@@ -13,8 +13,8 @@ You can use following operators with RuleEngine to perform logic!
 # Package Info:
 
 This repo has 3 packages:
-Node Package
-Package for browsers
+Node Package, 
+Package for browsers, 
 Package to implement with Salesoforce - Lightning Web Component framework (LWC)
 
 # Get Started:
