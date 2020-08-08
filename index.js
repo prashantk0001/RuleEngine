@@ -13,22 +13,24 @@
     @done :  add rule register method
     @done :  make inputs immutable, immer only required as a dev dependency for ruleEngine, remove when dev complete
     @done :  listed operators for inital phase : "&&","||","!=","==",">" ,">=","<" ,"<="
-    @todo :  wrap produce inside a simple method, created immutate()
+    @done :  wrap produce inside a simple method, created immutate()
+    @done :  input should be able to specify if multiple rules need to be executed for that input
+    @done :  made execue method async.
+    @todo :  for multiple rules, priority and mapping of which rules passed should be made
+    @todo :  add method to run all registered rules under a namespace
 
     ----------------------------------------------------------------------------------------------
 
     @todo :  Create Readme and dependencies, add more commments
-    @todo :  add schema validation for rules, check for yup.js / ajv        - added ajv, need to revalidate schema
     @todo :  List use cases for projects
-    @todo :  look how to process if objects are sent as params , JSPath? probably not, can recursively loop to locate props but not in object keys eg: data[this]
     @todo :  Add all operators as const export prop - prepared, yet to export
     @todo :  remove immer when dev is complete, remove extra dependencies as well by native code(immutate)
-    @todo :  input should be able to specify if multiple rules need to be executed for that input
-    @todo :  for multiple rules, priority and mapping of which rules passed should be made
-
+    @todo :  add schema validation for rules, check for yup.js / ajv        - added ajv, need to revalidate schema
+    
     ----------------------------------------------------------------------------------------------
     
-    @nottodo :  
+    @nottodo :  look how to process if objects are sent as params, can recursively loop to locate props but not in object keys eg: data[this], 
+                    this does not need to be implemented since users can pass individual params
 
     remarks : the operators will run on primitive values
         
@@ -37,7 +39,9 @@
 
 //this is input
 let processMe = {
-    ruleToExecute : "myrule2",
+    ruleNameSpace : "mynamespace",
+    executeAllRulesForSpecifiedNameSpace : true,
+    rulesToExecute : ["myrule"],
     inputs : {
         param1 : 2,
         param2 : 3
@@ -228,19 +232,20 @@ const ruleValidator = ajv.compile(ruleSchema);
 
 
 //engine code, exports etc
-const ruleRegistry = [];
+const ruleRegistry = {};
 
 //public
-const registerRule = (rule) => {
+const registerRule = (namespace, rule) => {
     let immutableRule = immutate(rule);
     let valid = ruleValidator(immutableRule);
     if(valid){
-        ruleRegistry.push(immutableRule);
+        ruleRegistry[namespace] = ruleRegistry[namespace] ? ruleRegistry[namespace] : [];
+        ruleRegistry[namespace].push(immutableRule);
     }
 }
 
-const fetchRuleFromRegistry = (rules, ruleName) => {
-    return rules.filter((rule) => {
+const fetchRuleFromRegistry = (registry, ruleNameSpace, ruleName) => {
+    return registry[ruleNameSpace].filter((rule) => {
         if(rule.ruleName === ruleName){
             return rule;
         }
@@ -351,13 +356,65 @@ const engine = (rule , processMe) => {
     }
 }
 
-registerRule(rules[0]);
-registerRule(rules[1]);
+const executor = (processMe) => {
+    if(processMe.rulesToExecute && processMe.rulesToExecute instanceof Array){
+        let results = {
+            processMe : processMe,
+            outcome : {}
+        }
+        if(processMe.executeAllRulesForSpecifiedNameSpace){
+            ruleRegistry[processMe.ruleNameSpace].forEach( (fetchedRule) => {
+                let result =  engine(fetchedRule, processMe);
+                results.outcome[fetchedRule.ruleName] = result;
+            } );
+        } else {
+            processMe.rulesToExecute.forEach( (ruleName) => {
+                let fetchedRule = fetchRuleFromRegistry(ruleRegistry, processMe.ruleNameSpace ,ruleName );
+                let result =  engine(fetchedRule, processMe);
+                results.outcome[ruleName] = result;
+            });
+        }
+        return results;
+    }
+
+}
+
+//public
+const execute = (processMe) => {
+    return new Promise((resolve) =>{
+        // eslint-disable-next-line @lwc/lwc/no-async-operation
+        setTimeout(() => {
+            resolve(immutate(executor(processMe)));
+        }, 0);
+    });
+}
+
+const factory = () =>{
+    return {
+        execute,
+        registerRule,
+        validOperations
+    }
+}
+
+;(function (global, factory) {
+    typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
+    typeof define === 'function' && define.amd ? define(factory) :
+    global.moment = factory()
+})(this,factory);
+
+
+/* usage */
+registerRule("mynamespace", rules[0]);
+registerRule("mynamespace", rules[1]);
 
 let immutableProcessMe = immutate(processMe);
+var finalResult;
 
-//add below statements into a single method to make public
-let fetchedRule = fetchRuleFromRegistry(ruleRegistry, immutableProcessMe.ruleToExecute);
-let result =  engine(fetchedRule, immutableProcessMe);
+execute(immutableProcessMe).then((res)=>{
+    finalResult = res;
+    finalResult
+});
+/* usage */
 
-result;
+
