@@ -26,9 +26,9 @@
     @todo :  Add all operators as const export prop - prepared, yet to export
     @todo :  remove immer when dev is complete, remove extra dependencies as well by native code(immutate)
     @todo :  add schema validation for rules, check for yup.js / ajv        - added ajv, need to revalidate schema
-    
+
     ----------------------------------------------------------------------------------------------
-    
+
     @nottodo :  look how to process if objects are sent as params, can recursively loop to locate props but not in object keys eg: data[this], 
                     this does not need to be implemented since users can pass individual params
 
@@ -390,9 +390,9 @@ const execute = (processMe) => {
 }
 
 module.exports = {
-        execute,
-        registerRule,
-        validOperations
+    execute,
+    registerRule,
+    validOperations
 }
 
 
