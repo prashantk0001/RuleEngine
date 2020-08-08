@@ -12,17 +12,19 @@
     @done :  add functionality to compare input params with each other
     @done :  add rule register method
     @done :  make inputs immutable, immer only required as a dev dependency for ruleEngine, remove when dev complete
+    @done :  listed operators for inital phase : "&&","||","!=","==",">" ,">=","<" ,"<="
+    @todo :  wrap produce inside a simple method, created immutate()
 
     ----------------------------------------------------------------------------------------------
 
     @todo :  Create Readme and dependencies, add more commments
     @todo :  add schema validation for rules, check for yup.js / ajv        - added ajv, need to revalidate schema
     @todo :  List use cases for projects
-    @todo :  listed operators for inital phase : "&&","||","!=","==",">" ,">=","<" ,"<="
-    @todo :  look how to process if objects are sent as params , JSPath?
+    @todo :  look how to process if objects are sent as params , JSPath? probably not, can recursively loop to locate props but not in object keys eg: data[this]
     @todo :  Add all operators as const export prop - prepared, yet to export
-    @todo :  remove immer when dev is complete
+    @todo :  remove immer when dev is complete, remove extra dependencies as well by native code(immutate)
     @todo :  input should be able to specify if multiple rules need to be executed for that input
+    @todo :  for multiple rules, priority and mapping of which rules passed should be made
 
     ----------------------------------------------------------------------------------------------
     
@@ -128,6 +130,8 @@ let rules = [
 let immer = require("immer");
 let { produce } = immer;
 
+const immutate = (rule) => produce(rule, (draft) => {return draft});
+
 let Ajv = require("ajv");
 
 
@@ -228,7 +232,7 @@ const ruleRegistry = [];
 
 //public
 const registerRule = (rule) => {
-    let immutableRule = produce(rule, (draft) => {return draft});
+    let immutableRule = immutate(rule);
     let valid = ruleValidator(immutableRule);
     if(valid){
         ruleRegistry.push(immutableRule);
@@ -247,7 +251,7 @@ const reducerForAND = (accumulator, currentValue) => accumulator && currentValue
 const reducerForOR = (accumulator, currentValue) => accumulator || currentValue;
 
 
-const operatorMap = produce({
+const operatorMap = immutate({
     "&&"    :   "and",
     "||"    :   "or",
     "!="    :   "not-equals",
@@ -256,7 +260,7 @@ const operatorMap = produce({
     ">="    :   "greater-than-equal-to",
     "<"     :   "less-than",
     "<="    :   "less-than-equal-to"
-}, (draft) => {return draft});
+});
 
 //public
 const validOperations = Object.keys(operatorMap);
@@ -270,6 +274,7 @@ const processCriteria = (criteria, inputs) => {
     isValid
 
     let operator = operatorMap[criteria.operator];
+    /*
     switch(operator) {
         case "and": {
             let resultArr = criteria.criteria.map((nextCriteria) => {
@@ -328,7 +333,68 @@ const processCriteria = (criteria, inputs) => {
         }
         break;
         default:{}
+      }*/
+
+      let processCriteraForOperator = {
+        "and"                       :   () => {
+            let resultArr = criteria.criteria.map((nextCriteria) => {
+                return processCriteria(nextCriteria, inputs);
+             });
+             return resultArr.reduce(reducerForAND);
+
+        },
+        "or"                        :   () => {
+            let resultArr = criteria.criteria.map((nextCriteria) => {
+                return processCriteria(nextCriteria, inputs);
+             });
+             return resultArr.reduce(reducerForOR);
+
+        },
+        "not-equals"                :   () => {
+            if(criteria.compareWith){
+                return inputs[criteria.param] !== inputs[criteria.compareWith];
+            }
+            return inputs[criteria.param] !== criteria.value;
+        }
+        ,
+        "equals"                    :   () => {
+            if(criteria.compareWith){
+                return inputs[criteria.param] === inputs[criteria.compareWith];
+            }
+            return inputs[criteria.param] === criteria.value;
+
+        },
+        "greater-than"              :   () => {
+            if(criteria.compareWith){
+                return inputs[criteria.param] > inputs[criteria.compareWith];
+            }
+            return inputs[criteria.param] > criteria.value;
+
+        },
+        "greater-than-equal-to"     :   () => {
+            if(criteria.compareWith){
+                return inputs[criteria.param] >= inputs[criteria.compareWith];
+            }
+            return inputs[criteria.param] >= criteria.value;
+
+        },
+        "less-than"                 :   () => {
+            if(criteria.compareWith){
+                return inputs[criteria.param] < inputs[criteria.compareWith];
+            }
+            return inputs[criteria.param] < criteria.value;
+
+        },
+        "less-than-equal-to"        :   () => {
+            if(criteria.compareWith){
+                return inputs[criteria.param] <= inputs[criteria.compareWith];
+            }
+            return inputs[criteria.param] <= criteria.value;
+
+        }
       }
+
+      return processCriteraForOperator[operator]();
 }
 
 const engine = (rule , processMe) => {
@@ -349,7 +415,7 @@ const engine = (rule , processMe) => {
 registerRule(rules[0]);
 registerRule(rules[1]);
 
-let immutableProcessMe = produce(processMe, (draft) => {return draft});
+let immutableProcessMe = immutate(processMe);
 
 //add below statements into a single method to make public
 let fetchedRule = fetchRuleFromRegistry(ruleRegistry, immutableProcessMe.ruleToExecute);
