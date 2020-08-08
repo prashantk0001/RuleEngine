@@ -27,6 +27,8 @@
 
     @todo :  Create Readme and dependencies, add more commments
     @todo :  List use cases for projects
+    @todo :  add distribution package for browser
+    
     ----------------------------------------------------------------------------------------------
     
     @nottodo :  look how to process if objects are sent as params, can recursively loop to locate props but not in object keys eg: data[this], 
