@@ -14,10 +14,7 @@
 /* ajv for schema validation */
 
 
-let { produce } = window.immer;
 
-//makes the passed object immutable
-const immutate = (obj) => produce(obj, (draft) => {return draft});
 
 /*
     JSONSchema to validate user input
@@ -135,12 +132,6 @@ const ruleSchema = {
     "additionalProperties" : false
 }
 
-const ajv = new window.Ajv({ allErrors: true }); // init ajv
-
-//pre compile all validators
-const ruleValidator = ajv.compile(ruleSchema);
-const inputValidator = ajv.compile(processMeSchema);
-const criteriaValidator = ajv.compile(criteriaSchema);
 
 /*
     fetches specified rule in the registry namespace
@@ -158,19 +149,8 @@ const reducerForAND = (accumulator, currentValue) => accumulator && currentValue
 //reducer method to process OR logical operator
 const reducerForOR = (accumulator, currentValue) => accumulator || currentValue;
 
-/*
-    to simplify operators for users
-*/
-const operatorMap = immutate({
-    "&&"    :   "and",
-    "||"    :   "or",
-    "!="    :   "not-equals",
-    "=="    :   "equals",
-    ">"     :   "greater-than",
-    ">="    :   "greater-than-equal-to",
-    "<"     :   "less-than",
-    "<="    :   "less-than-equal-to"
-});
+
+
 
 /*
     recursive method that resolves all criteria and returns result.
@@ -263,8 +243,46 @@ const engine = (rule , processMe) => {
     }
 }
 
+
+let produce;
+
+//makes the passed object immutable
+let immutate;
+let ajv;
+
+//pre compile all validators
+let ruleValidator;
+let inputValidator;
+let criteriaValidator;
+/*
+    to simplify operators for users
+*/
+let operatorMap;
+
 //public property: for the devs to refer if they need to know which operators are allowed
-const validOperations = immutate(Object.keys(operatorMap));
+let validOperations;
+
+const init = () =>{
+    produce = window.immer.produce;
+    immutate = (obj) => produce(obj, (draft) => {return draft})
+    ajv = new window.Ajv({ allErrors: true }); // init ajv
+    ruleValidator = ajv.compile(ruleSchema);
+    inputValidator = ajv.compile(processMeSchema);
+    criteriaValidator = ajv.compile(criteriaSchema);
+    operatorMap = immutate({
+        "&&"    :   "and",
+        "||"    :   "or",
+        "!="    :   "not-equals",
+        "=="    :   "equals",
+        ">"     :   "greater-than",
+        ">="    :   "greater-than-equal-to",
+        "<"     :   "less-than",
+        "<="    :   "less-than-equal-to"
+    });
+    validOperations = immutate(Object.keys(operatorMap));
+}
+
+init();
 
 /*
     Module that initializes the RuleEngine
@@ -341,11 +359,3 @@ function RuleEngine(){
     }
 
 }
-/*
-//exports
-module.exports = {
-    RuleEngine,
-    validOperations
-};
-
-*/
