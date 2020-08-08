@@ -1,5 +1,5 @@
 import { LightningElement, track } from 'lwc';
-import { loadDependencies,RuleEngine } from 'c/ruleBuilder';
+import { loadDependencies,RuleEngine } from 'c/ruleEngine';
 
 
 //this is input

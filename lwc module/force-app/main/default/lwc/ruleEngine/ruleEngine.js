@@ -18,6 +18,23 @@ import ajvURL from '@salesforce/resourceUrl/ajv';
 
 
 
+let produce;
+
+//makes the passed object immutable
+let immutate;
+let ajv;
+
+//pre compile all validators
+let ruleValidator;
+let inputValidator;
+let criteriaValidator;
+/*
+    to simplify operators for users
+*/
+let operatorMap;
+
+//public property: for the devs to refer if they need to know which operators are allowed
+let validOperations;
 
 /*
     JSONSchema to validate user input
@@ -260,23 +277,6 @@ const engine = (rule , processMe) => {
     }
 }
 
-let produce;
-
-//makes the passed object immutable
-let immutate;
-let ajv;
-
-//pre compile all validators
-let ruleValidator;
-let inputValidator;
-let criteriaValidator;
-/*
-    to simplify operators for users
-*/
-let operatorMap;
-
-//public property: for the devs to refer if they need to know which operators are allowed
-let validOperations;
 
 const init = () =>{
     produce = window.immer.produce;
