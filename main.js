@@ -11,121 +11,34 @@
     @done :  
     @done :  add functionality to compare input params with each other
     @done :  add rule register method
-    @done :  make inputs immutable, immer only required as a dev dependency for ruleEngine, remove when dev complete
+    @done :  make inputs & outputs immutable
     @done :  listed operators for inital phase : "&&","||","!=","==",">" ,">=","<" ,"<="
     @done :  wrap produce inside a simple method, created immutate()
     @done :  input should be able to specify if multiple rules need to be executed for that input
     @done :  made execue method async.
-    @todo :  for multiple rules, priority and mapping of which rules passed should be made
-    @todo :  add method to run all registered rules under a namespace
+    @done :  for multiple rules, priority and mapping of which rules passed should be made
+    @done :  add method to run all registered rules under a namespace
+    @done :  Add all operators as const export prop - prepared
+    @done :  add schema validation for rules, check for yup.js / ajv        - added ajv, need to revalidate schema
+    @done :  validate processMe
+    @done :  Add Rejection to promise, with validation errors
 
     ----------------------------------------------------------------------------------------------
 
     @todo :  Create Readme and dependencies, add more commments
     @todo :  List use cases for projects
-    @todo :  Add all operators as const export prop - prepared, yet to export
-    @todo :  remove immer when dev is complete, remove extra dependencies as well by native code(immutate)
-    @todo :  add schema validation for rules, check for yup.js / ajv        - added ajv, need to revalidate schema
-
     ----------------------------------------------------------------------------------------------
-
+    
     @nottodo :  look how to process if objects are sent as params, can recursively loop to locate props but not in object keys eg: data[this], 
-                    this does not need to be implemented since users can pass individual params
+        this does not need to be implemented since users can pass individual params
+    
+    
+    @futurescope :  return value to be sent from input prarm when needed
 
     remarks : the operators will run on primitive values, i.e. params must be primitive
          
         
 */
-
-//this is input
-let processMe = {
-    ruleNameSpace : "mynamespace",
-    executeAllRulesForSpecifiedNameSpace : true,
-    rulesToExecute : ["myrule"],
-    inputs : {
-        param1 : 2,
-        param2 : 3
-    }
-};
-
-/*--------------------------------------------------------------------------------------------------------------------------------*/
-
-//rule definition
-let rules = [
-    {
-        ruleName : "myrule",
-        returnVal : true,
-        formula : {
-            operator : "&&",
-            criteria : [
-                {
-                    operator : "||",
-                    criteria : [
-                        {
-                            operator : "!=",
-                            param : "param1",
-                            value : 1
-                        },
-                        {
-                            operator : "==",
-                            param : "param1",
-                            value : 2
-                        }
-                    ]
-                },
-                {
-                    operator : "!=",
-                    param : "param2",
-                    value : 3
-                }
-            ]
-        }
-    },
-    {
-        ruleName : "myrule2",
-        returnVal : true,
-        formula : {
-            operator : "&&",
-            criteria : [
-                {
-                    operator : "||",
-                    criteria : [
-                        {
-                            operator : "!=",
-                            param : "param1",
-                            value : 1
-                        },
-                        {
-                            operator : "==",
-                            param : "param1",
-                            value : 2
-                        }
-                    ]
-                },
-                {
-                    operator : "&&",
-                    criteria : [
-                        {
-                            operator : "!=",
-                            param : "param1",
-                            value : null
-                        },
-                        {
-                            operator : "!=",
-                            param : "param2",
-                            value : null
-                        },
-                        {
-                            operator : "!=",
-                            param : "param2",
-                            compareWith : "param1"
-                        }
-                    ]
-                }
-            ]
-        }
-    }
-];
 
 /*--------------------------------------------------------------------------------------------------------------------------------*/
 
@@ -138,6 +51,26 @@ let { produce } = immer;
 
 const immutate = (rule) => produce(rule, (draft) => {return draft});
 
+const processMeSchema = {
+    "type" : ["object"],
+    "properties" :  {
+        "ruleNameSpace" : {
+            "type" : "string"
+        },
+        "executeAllRulesForSpecifiedNameSpace" : {
+            "type" : "boolean"
+        },
+        "rulesToExecute" : {
+            "type" : "array"
+        },
+        "inputs" : {
+            "type" : "object",
+            "additionalProperties" : true
+        }
+    },
+    "required" : ["ruleNameSpace"],
+    "additionalProperties" : false
+}
 
 
 const criteriaSchema = {
@@ -226,24 +159,12 @@ const ruleSchema = {
     "additionalProperties" : false
 }
 
-
-const ajv = new Ajv({ allErrors: true}); // options can be passed, e.g. {allErrors: true}
+const ajv = new Ajv({ allErrors: true }); // options can be passed, e.g. {allErrors: true}
 
 const ruleValidator = ajv.compile(ruleSchema);
+const inputValidator = ajv.compile(processMeSchema);
+const criteriaValidator = ajv.compile(criteriaSchema);
 
-
-//engine code, exports etc
-const ruleRegistry = {};
-
-//public
-const registerRule = (namespace, rule) => {
-    let immutableRule = immutate(rule);
-    let valid = ruleValidator(immutableRule);
-    if(valid){
-        ruleRegistry[namespace] = ruleRegistry[namespace] ? ruleRegistry[namespace] : [];
-        ruleRegistry[namespace].push(immutableRule);
-    }
-}
 
 const fetchRuleFromRegistry = (registry, ruleNameSpace, ruleName) => {
     return registry[ruleNameSpace].filter((rule) => {
@@ -268,84 +189,81 @@ const operatorMap = immutate({
     "<="    :   "less-than-equal-to"
 });
 
-//public
-const validOperations = Object.keys(operatorMap);
-
-const criteriaValidator = ajv.compile(criteriaSchema);
 
 const processCriteria = (criteria, inputs) => {
-
     let isValid = criteriaValidator(criteria);
-    criteria
-    isValid
 
-    let operator = operatorMap[criteria.operator];
-    
-    switch(operator) {
-        case "and": {
-            let resultArr = criteria.criteria.map((nextCriteria) => {
-                return processCriteria(nextCriteria, inputs);
-             });
-             return resultArr.reduce(reducerForAND);
-        }
-        break;
-        case "or": {
-            let resultArr = criteria.criteria.map((nextCriteria) => {
-                return processCriteria(nextCriteria, inputs);
-             });
-             return resultArr.reduce(reducerForOR);
-        }
-        break;
-        case "not-equals": {
-            if(criteria.compareWith){
-                return inputs[criteria.param] !== inputs[criteria.compareWith];
+    if(isValid){
+        let operator = operatorMap[criteria.operator];
+        
+        switch(operator) {
+            case "and": {
+                let resultArr = criteria.criteria.map((nextCriteria) => {
+                    return processCriteria(nextCriteria, inputs);
+                });
+                return resultArr.reduce(reducerForAND);
             }
-            return inputs[criteria.param] !== criteria.value;
-        }
-        break;
-        case "equals": {
-            if(criteria.compareWith){
-                return inputs[criteria.param] === inputs[criteria.compareWith];
+            break;
+            case "or": {
+                let resultArr = criteria.criteria.map((nextCriteria) => {
+                    return processCriteria(nextCriteria, inputs);
+                });
+                return resultArr.reduce(reducerForOR);
             }
-            return inputs[criteria.param] === criteria.value;
-        }
-        break;
-        case "greater-than": {
-            if(criteria.compareWith){
-                return inputs[criteria.param] > inputs[criteria.compareWith];
+            break;
+            case "not-equals": {
+                if(criteria.compareWith){
+                    return inputs[criteria.param] !== inputs[criteria.compareWith];
+                }
+                return inputs[criteria.param] !== criteria.value;
             }
-            return inputs[criteria.param] > criteria.value;
-        }
-        break;
-        case "greater-than-equal-to": {
-            if(criteria.compareWith){
-                return inputs[criteria.param] >= inputs[criteria.compareWith];
+            break;
+            case "equals": {
+                if(criteria.compareWith){
+                    return inputs[criteria.param] === inputs[criteria.compareWith];
+                }
+                return inputs[criteria.param] === criteria.value;
             }
-            return inputs[criteria.param] >= criteria.value;
-        }
-        break;
-        case "less-than": {
-            if(criteria.compareWith){
-                return inputs[criteria.param] < inputs[criteria.compareWith];
+            break;
+            case "greater-than": {
+                if(criteria.compareWith){
+                    return inputs[criteria.param] > inputs[criteria.compareWith];
+                }
+                return inputs[criteria.param] > criteria.value;
             }
-            return inputs[criteria.param] < criteria.value;
-        }
-        break;
-        case "less-than-equal-to": {
-            if(criteria.compareWith){
-                return inputs[criteria.param] <= inputs[criteria.compareWith];
+            break;
+            case "greater-than-equal-to": {
+                if(criteria.compareWith){
+                    return inputs[criteria.param] >= inputs[criteria.compareWith];
+                }
+                return inputs[criteria.param] >= criteria.value;
             }
-            return inputs[criteria.param] <= criteria.value;
+            break;
+            case "less-than": {
+                if(criteria.compareWith){
+                    return inputs[criteria.param] < inputs[criteria.compareWith];
+                }
+                return inputs[criteria.param] < criteria.value;
+            }
+            break;
+            case "less-than-equal-to": {
+                if(criteria.compareWith){
+                    return inputs[criteria.param] <= inputs[criteria.compareWith];
+                }
+                return inputs[criteria.param] <= criteria.value;
+            }
+            break;
+            default:{}
         }
-        break;
-        default:{}
-      }
+    }else{
+        console.error("Runtime Error : 'Criteria is invalid'");
+        console.error(criteriaValidator.errors);
+        throw criteriaValidator.errors;
+    }
 }
 
 const engine = (rule , processMe) => {
     if(rule && processMe){
-        rule
-        processMe
         let outcome = processCriteria(rule.formula, processMe.inputs);
         outcome 
         if(outcome && rule.returnVal){
@@ -357,56 +275,81 @@ const engine = (rule , processMe) => {
     }
 }
 
-const executor = (processMe) => {
-    if(processMe.rulesToExecute && processMe.rulesToExecute instanceof Array){
-        let results = {
-            processMe : processMe,
-            outcome : {}
+//engine code
+
+const validOperations = immutate(Object.keys(operatorMap));
+
+function RuleEngine(){
+
+    const ruleRegistry = {};
+
+    const registerRule = (namespace, rule) => {
+        let immutableRule = immutate(rule);
+        let isValid = ruleValidator(immutableRule);
+        if(isValid){
+            ruleRegistry[namespace] = ruleRegistry[namespace] ? ruleRegistry[namespace] : [];
+            ruleRegistry[namespace].push(immutableRule);
+        }else{
+            console.error("Error : Cannot Register, 'Rule is invalid'");
+            console.error(ruleValidator.errors);
+            throw ruleValidator.errors;
         }
-        if(processMe.executeAllRulesForSpecifiedNameSpace){
-            ruleRegistry[processMe.ruleNameSpace].forEach( (fetchedRule) => {
-                let result =  engine(fetchedRule, processMe);
-                results.outcome[fetchedRule.ruleName] = result;
-            } );
-        } else {
-            processMe.rulesToExecute.forEach( (ruleName) => {
-                let fetchedRule = fetchRuleFromRegistry(ruleRegistry, processMe.ruleNameSpace ,ruleName );
-                let result =  engine(fetchedRule, processMe);
-                results.outcome[ruleName] = result;
-            });
+    }
+
+    const executor = (processMe) => {
+        if(processMe.rulesToExecute && processMe.rulesToExecute instanceof Array){
+            let results = {
+                processMe : processMe,
+                outcome : {}
+            }
+            if(processMe.executeAllRulesForSpecifiedNameSpace){
+                ruleRegistry[processMe.ruleNameSpace].forEach( (fetchedRule) => {
+                    let result =  engine(fetchedRule, processMe);
+                    results.outcome[fetchedRule.ruleName] = result;
+                } );
+            } else {
+                processMe.rulesToExecute.forEach( (ruleName) => {
+                    let fetchedRule = fetchRuleFromRegistry(ruleRegistry, processMe.ruleNameSpace ,ruleName );
+                    let result =  engine(fetchedRule, processMe);
+                    results.outcome[ruleName] = result;
+                });
+            }
+            return results;
         }
-        return results;
+
+    }
+
+    const execute = (processMe) => {
+        return new Promise((resolve, reject) =>{
+            let immutableProcessMe = immutate(processMe);
+            // eslint-disable-next-line @lwc/lwc/no-async-operation
+            setTimeout(() => {
+                try{
+                    let isValid = inputValidator(processMe);
+                    if(isValid){
+                        resolve(immutate(executor(immutableProcessMe)));
+                    }else{
+                        console.error("Error: Cannot process, processMe is Invalid");
+                        console.error(inputValidator.errors);
+                        throw inputValidator.errors;
+                    }
+                    
+                }catch(err){
+                    reject(err);
+                }
+            }, 0);
+        });
+    }
+
+    return {
+        execute,
+        registerRule,
     }
 
 }
 
-//public
-const execute = (processMe) => {
-    return new Promise((resolve) =>{
-        // eslint-disable-next-line @lwc/lwc/no-async-operation
-        setTimeout(() => {
-            resolve(immutate(executor(processMe)));
-        }, 0);
-    });
-}
-
 module.exports = {
-    execute,
-    registerRule,
+    RuleEngine,
     validOperations
-}
-
-/* usage */
-registerRule("mynamespace", rules[0]);
-registerRule("mynamespace", rules[1]);
-
-let immutableProcessMe = immutate(processMe);
-var finalResult;
-
-execute(immutableProcessMe).then((res)=>{
-    finalResult = res;
-    finalResult
-});
-/* usage */
-
+};
 
