@@ -32,8 +32,8 @@
     @nottodo :  look how to process if objects are sent as params, can recursively loop to locate props but not in object keys eg: data[this], 
                     this does not need to be implemented since users can pass individual params
 
-    remarks : the operators will run on primitive values
-        
+    remarks : the operators will run on primitive values, i.e. params must be primitive
+         
         
 */
 
