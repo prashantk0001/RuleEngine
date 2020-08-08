@@ -1,5 +1,5 @@
 # RuleEngine
-A simple, logical Rule Engine for Node, Browser and Salesforce LWC.
+A simple, logical Rule Engine for Node.js, Browser and Salesforce LWC.
 
 ![RuleEngine](docs/RuleEngineDesign.jpg)
 
