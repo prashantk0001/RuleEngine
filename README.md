@@ -48,6 +48,11 @@ let processMe = {
 
 ### A sample rule:
 
+`(( param1 != 1 || param1 == 2 ) && ( param1 != null && param2 != null && param2 != param1) )`
+
+above logic can be translated into:
+
+
 ```
 {
         ruleName : "myrule",                          //name of the rule
