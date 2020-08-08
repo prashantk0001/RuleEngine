@@ -118,5 +118,5 @@ var result = {
 
     - Output is immutable.
     - processMe and rule Schema must be as specified, if not, promise will be rejected.
-    
-    - 
+
+### Well, that's all. Happy processing!
