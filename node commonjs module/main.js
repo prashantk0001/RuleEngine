@@ -22,12 +22,12 @@
     @done :  add schema validation for rules, check for yup.js / ajv        - added ajv, need to revalidate schema
     @done :  validate processMe
     @done :  Add Rejection to promise, with validation errors
+    @done :  add distribution package for browser
 
     ----------------------------------------------------------------------------------------------
 
     @todo :  Create Readme and dependencies, add more commments
     @todo :  List use cases for projects
-    @todo :  add distribution package for browser
 
     ----------------------------------------------------------------------------------------------
     
