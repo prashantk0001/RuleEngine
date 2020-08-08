@@ -274,7 +274,7 @@ const processCriteria = (criteria, inputs) => {
     isValid
 
     let operator = operatorMap[criteria.operator];
-    /*
+    
     switch(operator) {
         case "and": {
             let resultArr = criteria.criteria.map((nextCriteria) => {
@@ -333,68 +333,7 @@ const processCriteria = (criteria, inputs) => {
         }
         break;
         default:{}
-      }*/
-
-      let processCriteraForOperator = {
-        "and"                       :   () => {
-            let resultArr = criteria.criteria.map((nextCriteria) => {
-                return processCriteria(nextCriteria, inputs);
-             });
-             return resultArr.reduce(reducerForAND);
-
-        },
-        "or"                        :   () => {
-            let resultArr = criteria.criteria.map((nextCriteria) => {
-                return processCriteria(nextCriteria, inputs);
-             });
-             return resultArr.reduce(reducerForOR);
-
-        },
-        "not-equals"                :   () => {
-            if(criteria.compareWith){
-                return inputs[criteria.param] !== inputs[criteria.compareWith];
-            }
-            return inputs[criteria.param] !== criteria.value;
-        }
-        ,
-        "equals"                    :   () => {
-            if(criteria.compareWith){
-                return inputs[criteria.param] === inputs[criteria.compareWith];
-            }
-            return inputs[criteria.param] === criteria.value;
-
-        },
-        "greater-than"              :   () => {
-            if(criteria.compareWith){
-                return inputs[criteria.param] > inputs[criteria.compareWith];
-            }
-            return inputs[criteria.param] > criteria.value;
-
-        },
-        "greater-than-equal-to"     :   () => {
-            if(criteria.compareWith){
-                return inputs[criteria.param] >= inputs[criteria.compareWith];
-            }
-            return inputs[criteria.param] >= criteria.value;
-
-        },
-        "less-than"                 :   () => {
-            if(criteria.compareWith){
-                return inputs[criteria.param] < inputs[criteria.compareWith];
-            }
-            return inputs[criteria.param] < criteria.value;
-
-        },
-        "less-than-equal-to"        :   () => {
-            if(criteria.compareWith){
-                return inputs[criteria.param] <= inputs[criteria.compareWith];
-            }
-            return inputs[criteria.param] <= criteria.value;
-
-        }
       }
-
-      return processCriteraForOperator[operator]();
 }
 
 const engine = (rule , processMe) => {
