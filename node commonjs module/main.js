@@ -27,6 +27,8 @@
 
     @todo :  Create Readme and dependencies, add more commments
     @todo :  List use cases for projects
+    @todo :  add distribution package for browser
+
     ----------------------------------------------------------------------------------------------
     
     @nottodo :  look how to process if objects are sent as params, can recursively loop to locate props but not in object keys eg: data[this], 
@@ -43,14 +45,19 @@
 /*--------------------------------------------------------------------------------------------------------------------------------*/
 
 /*dependencies*/
-
+/* immer js to add robustness */
 let immer = require("immer");
+/* ajv for schema validation */
 let Ajv = require("ajv");
 
 let { produce } = immer;
 
-const immutate = (rule) => produce(rule, (draft) => {return draft});
+//makes the passed object immutable
+const immutate = (obj) => produce(obj, (draft) => {return draft});
 
+/*
+    JSONSchema to validate user input
+*/
 const processMeSchema = {
     "type" : ["object"],
     "properties" :  {
@@ -72,7 +79,9 @@ const processMeSchema = {
     "additionalProperties" : false
 }
 
-
+/*
+    JSONSchema to validate criteria
+*/
 const criteriaSchema = {
     "type": ["object", "array"],
     "properties" : {
@@ -97,6 +106,9 @@ const criteriaSchema = {
     "additionalProperties" : false
 }
 
+/*
+    JSONSchema to validate rules
+*/
 const ruleSchema = {
     "definitions": {
         "criteria": {
@@ -159,13 +171,16 @@ const ruleSchema = {
     "additionalProperties" : false
 }
 
-const ajv = new Ajv({ allErrors: true }); // options can be passed, e.g. {allErrors: true}
+const ajv = new Ajv({ allErrors: true }); // init ajv
 
+//pre compile all validators
 const ruleValidator = ajv.compile(ruleSchema);
 const inputValidator = ajv.compile(processMeSchema);
 const criteriaValidator = ajv.compile(criteriaSchema);
 
-
+/*
+    fetches specified rule in the registry namespace
+*/
 const fetchRuleFromRegistry = (registry, ruleNameSpace, ruleName) => {
     return registry[ruleNameSpace].filter((rule) => {
         if(rule.ruleName === ruleName){
@@ -174,10 +189,14 @@ const fetchRuleFromRegistry = (registry, ruleNameSpace, ruleName) => {
     })[0];
 }
 
+//reducer method to process AND logical operator
 const reducerForAND = (accumulator, currentValue) => accumulator && currentValue;
+//reducer method to process OR logical operator
 const reducerForOR = (accumulator, currentValue) => accumulator || currentValue;
 
-
+/*
+    to simplify operators for users
+*/
 const operatorMap = immutate({
     "&&"    :   "and",
     "||"    :   "or",
@@ -189,7 +208,10 @@ const operatorMap = immutate({
     "<="    :   "less-than-equal-to"
 });
 
-
+/*
+    recursive method that resolves all criteria and returns result.
+     also validates the passed criteria, throws runtime error if criteria validation fails
+*/
 const processCriteria = (criteria, inputs) => {
     let isValid = criteriaValidator(criteria);
 
@@ -262,10 +284,12 @@ const processCriteria = (criteria, inputs) => {
     }
 }
 
+/*
+    processes a single rule that is passed against input
+*/
 const engine = (rule , processMe) => {
     if(rule && processMe){
         let outcome = processCriteria(rule.formula, processMe.inputs);
-        outcome 
         if(outcome && rule.returnVal){
             return rule.returnVal;
         }else{
@@ -275,14 +299,18 @@ const engine = (rule , processMe) => {
     }
 }
 
-//engine code
-
+//public property: for the devs to refer if they need to know which operators are allowed
 const validOperations = immutate(Object.keys(operatorMap));
 
+/*
+    Module that initializes the RuleEngine
+*/
 function RuleEngine(){
 
+    //private registry of rules
     const ruleRegistry = {};
 
+    //public method that registers a rule in the specified namespace
     const registerRule = (namespace, rule) => {
         let immutableRule = immutate(rule);
         let isValid = ruleValidator(immutableRule);
@@ -296,6 +324,7 @@ function RuleEngine(){
         }
     }
 
+    //method that processes input for all the specified rules in processMe Object
     const executor = (processMe) => {
         if(processMe.rulesToExecute && processMe.rulesToExecute instanceof Array){
             let results = {
@@ -319,6 +348,7 @@ function RuleEngine(){
 
     }
 
+    //public method - validates processMe and initiates input processing
     const execute = (processMe) => {
         return new Promise((resolve, reject) =>{
             let immutableProcessMe = immutate(processMe);
@@ -348,6 +378,7 @@ function RuleEngine(){
 
 }
 
+//exports
 module.exports = {
     RuleEngine,
     validOperations

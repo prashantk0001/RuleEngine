@@ -99,22 +99,22 @@ let rules = [
 ];
 
 /*--------------------------------------------------------------------------------------------------------------------------------*/
-
+/*
 const {
     RuleEngine,
     validOperations
 } = require("./main.js");
-
+*/
 /* usage */
 
-let engine = new RuleEngine();
+let engine1 = new RuleEngine();
 
-engine.registerRule("mynamespace", rules[0]);
-engine.registerRule("mynamespace", rules[1]);
+engine1.registerRule("mynamespace", rules[0]);
+engine1.registerRule("mynamespace", rules[1]);
 
 var finalResult;
 
-engine.execute(processMe).then((res)=>{
+engine1.execute(processMe).then((res)=>{
     finalResult = res;
     console.log(finalResult);
 });
