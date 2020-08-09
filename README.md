@@ -5,6 +5,15 @@ A simple, logical Rule Engine for Node.js, Browser and Salesforce LWC.
 
 This Engine can perform logic that you can configure and let's you easily process the same on the input you provide. 
 
+Store your configurable, dynamic Logical Rules written in JSON and apply those Rules on your data to check whether it passes or not. This Engine enables you to configure the logic and eliminates the deployment process for critical items.
+
+A simple scenario would be: 
+Let's say you've a predetermined features of a mobile phone. You need to determine whether it is a smartphone or a feature phone.
+
+You can simply write Rule which checks for all the features required for a smartphone & represents a smartphone criteria.
+
+and then you can list all the features of a phone and apply the smartphone rule on it, if it contains all the features available in a smartphone, outcome will be true.
+
 # Operators:
 
 You can use following operators with RuleEngine to perform logic!
@@ -50,7 +59,7 @@ let processMe = {
 
 `(( param1 != 1 || param1 == 2 ) && ( param1 != null && param2 != null && param2 != param1) )`
 
-above logic can be translated into:
+above logic needs to be put into JSON as:
 
 
 ```
@@ -103,7 +112,7 @@ above logic can be translated into:
 ### Here's the output:
 
 ```
-var result = {
+let result = {
     "processMe": {                              //original input
         "ruleNameSpace": "mynamespace2",
         "executeAllRulesForSpecifiedNameSpace": true,
