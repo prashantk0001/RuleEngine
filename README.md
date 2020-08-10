@@ -1,6 +1,8 @@
 # RuleEngine
 A simple, logical Rule Engine for Node.js, Browser and Salesforce LWC.
 
+To generate Rules on runtime if needed, take a look at [Rule Parser](https://github.com/prashantk0001/RuleParser)
+
 ![RuleEngine](docs/RuleEngineDesign.jpg)
 
 This Engine can perform logic that you can configure and let's you easily process the same on the input you provide. 
@@ -60,6 +62,8 @@ let processMe = {
 `(( param1 != 1 || param1 == 2 ) && ( param1 != null && param2 != null && param2 != param1) )`
 
 above logic needs to be put into JSON as:
+
+if you need easy rule generation at runtime, look at [Rule Parser](https://github.com/prashantk0001/RuleParser)
 
 
 ```
